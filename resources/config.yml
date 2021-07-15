@@ -8,4 +8,4 @@ CommandGlitching: true
 CancelPearl-Message: "§7[§bAntiGlitch§7] §cPearl Cancelled due to suffocation!"
 CancelBlockPlace-Message: false
 CancelBlockBreak-Message: false
-CancelCommand-Message: "§7[§bAntiGlitch§7] §cCommand Cancelled due to space after the slash(/)!"
+CancelCommand-Message: "§7[§bAntiGlitch§7] §cCommand Cancelled due to glitch detected!"

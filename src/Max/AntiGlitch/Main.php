@@ -172,7 +172,7 @@ class Main extends PluginBase implements Listener {
 
 	public function fixCommandSpace(PlayerCommandPreprocessEvent $event){
         if ($this->config->get("CommandGlitching") === true) {
-            if(substr($event->getMessage(), 0, 2) == "/ "){
+            if((substr($event->getMessage(), 0, 2) == "/ ") or (substr($event->getMessage(), 0, 2) == "/\\") or (substr($event->getMessage(), 0, 2) == "/\"") or (substr($event->getMessage(), -1, 1) == "\\")){
                 $event->setCancelled();
                 if ($this->config->get("CancelCommand-Message") !== false) {
                     $event->getPlayer()->sendMessage($this->config->get("CancelCommand-Message"));
