@@ -1,6 +1,6 @@
 <img src="https://i.ibb.co/gdynDyp/Anti-Glitch-2.png" width="120" height="120" align="left"></img>
 
-# StaffMode
+# AntiGlitch
 AntiGlitch is an all-in-one Pocketmine-MP (PMMP) plugin made to prevent as many known glitches.
 
 # Setup Guide
