@@ -1,0 +1,11 @@
+# Enable or disable glitching prevention for the following glitches: (true/false)
+PearlGlitching: true 
+PlaceBlockGlitching: true
+BreakBlockGlitching: true
+CommandGlitching: true
+
+# The message that will be sent to the place who attempts the glitch: (false/"<message>")
+CancelPearl-Message: "§7[§bAntiGlitch§7] §cPearl Cancelled due to suffocation!"
+CancelBlockPlace-Message: false
+CancelBlockBreak-Message: false
+CancelCommand-Message: "§7[§bAntiGlitch§7] §cCommand Cancelled due to space after the slash(/)!"
