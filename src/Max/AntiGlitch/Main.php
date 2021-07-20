@@ -98,7 +98,7 @@ class Main extends PluginBase implements Listener {
             }
             if(in_array($level->getBlockAt((int)$xb, (int)($y - 0.000001), (int)$zb)->getId(), $openblocks)) $y = $y - 2.0;
         }
-	  elseif { 
+	  else { 
             foreach (range(0.1, 1.8, 0.1) as $n) {
                 if (!in_array($level->getBlockAt((int)$xb, (int)($y + $n), (int)$zb)->getId(), $openblocks)) $y = $y - (1 - $n); //Determine how far down they should be teleported if there is a block above them:
             }
