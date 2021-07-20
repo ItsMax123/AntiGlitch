@@ -98,25 +98,11 @@ class Main extends PluginBase implements Listener {
             }
             if(in_array($level->getBlockAt((int)$xb, (int)($y - 0.000001), (int)$zb)->getId(), $openblocks)) $y = $y - 2.0;
         }
-
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 0.1), (int)$zb)->getId(), $openblocks)) $y = $y - 1.9;  //Determine how far down they should be teleported if there is a block above them:
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 0.2), (int)$zb)->getId(), $openblocks)) $y = $y - 1.8;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 0.3), (int)$zb)->getId(), $openblocks)) $y = $y - 1.7;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 0.4), (int)$zb)->getId(), $openblocks)) $y = $y - 1.6;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 0.5), (int)$zb)->getId(), $openblocks)) $y = $y - 1.5;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 0.6), (int)$zb)->getId(), $openblocks)) $y = $y - 1.4;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 0.7), (int)$zb)->getId(), $openblocks)) $y = $y - 1.3;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 0.8), (int)$zb)->getId(), $openblocks)) $y = $y - 1.2;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 0.9), (int)$zb)->getId(), $openblocks)) $y = $y - 1.1;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 1.0), (int)$zb)->getId(), $openblocks)) $y = $y - 1.0;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 1.1), (int)$zb)->getId(), $openblocks)) $y = $y - 0.9;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 1.2), (int)$zb)->getId(), $openblocks)) $y = $y - 0.8;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 1.3), (int)$zb)->getId(), $openblocks)) $y = $y - 0.7;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 1.4), (int)$zb)->getId(), $openblocks)) $y = $y - 0.6;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 1.5), (int)$zb)->getId(), $openblocks)) $y = $y - 0.5;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 1.6), (int)$zb)->getId(), $openblocks)) $y = $y - 0.4;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 1.7), (int)$zb)->getId(), $openblocks)) $y = $y - 0.3;
-        elseif (!in_array($level->getBlockAt((int)$xb, (int)($y + 1.8), (int)$zb)->getId(), $openblocks)) $y = $y - 0.2;
+	  elseif { 
+            foreach (range(0.1, 1.8, 0.1) as $n) {
+                if (!in_array($level->getBlockAt((int)$xb, (int)($y + $n), (int)$zb)->getId(), $openblocks)) $y = $y - (1 - $n); //Determine how far down they should be teleported if there is a block above them:
+            }
+        }
         if (!in_array($level->getBlockAt((int)$xb, (int)($y), (int)$zb)->getId(), $openblocks)) { //Cancel tp if there are blocks in their feet.
             if ($this->config->get("PearlGlitching") === true) {
                 if ($this->config->get("CancelPearl-Message") !== false) {
