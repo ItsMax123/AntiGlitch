@@ -33,8 +33,7 @@ class Main extends PluginBase implements Listener {
         //$block = $event->getBlockHit();
         $pearl = $event->getEntity();
         $player = $event->getEntity()->getOwningEntity();
-        if (!$player instanceof Player) return;
-        if (!$pearl instanceof EnderPearl) return;
+        if (!$player instanceof Player && !$pearl instanceof EnderPearl) return;
         $this->pearlland[$player->getName()] = time();
     }
 
@@ -60,10 +59,10 @@ class Main extends PluginBase implements Listener {
             $zb = $z - 1;  //Adjust coords if in a negative quadrant
         }
 
-        if ($y == ((int)$y) + 0.5) $y = (int)$y; //For slabs
+        if ($y === ((int)$y) + 0.5) $y = (int)$y; //For slabs
 
 
-        if (round($x) == $x) { //Pearled on the $x axis
+        if (round($x) === $x) { //Pearled on the $x axis
             if(in_array($level->getBlockAt((int)($xb + 0.000001), (int)$y, (int)$zb)->getId(), $openblocks)) {
                 $x = $x + 0.3;
                 $xb = $xb + 0.000001;
@@ -74,7 +73,7 @@ class Main extends PluginBase implements Listener {
             }
         }
 
-        if (round($z) == $z) { //Pearled on the $z axis
+        if (round($z) === $z) { //Pearled on the $z axis
             if(in_array($level->getBlockAt((int)$xb, (int)$y, (int)($zb + 0.000001))->getId(), $openblocks)) {
                 $z = $z + 0.3;
                 $zb = $zb + 0.000001;
@@ -85,11 +84,11 @@ class Main extends PluginBase implements Listener {
             }
         }
 
-        if (round($y) == $y) { //Pearled on the $y axis
+        if (round($y) === $y) { //Pearled on the $y axis
             if(in_array($level->getBlockAt((int)$xb, (int)($y + 0.000001), (int)$zb)->getId(), $openblocks)) {
                 if (!in_array($level->getBlockAt((int)$xb, (int)($y + 1.000001), (int)$zb)->getId(), $openblocks)){
-                    if ($this->config->get("PearlGlitching") === true) {
-                        if ($this->config->get("CancelPearl-Message") !== false) {
+                    if ($this->config->get("PearlGlitching")) {
+                        if (!$this->config->get("CancelPearl-Message")) {
                             $entity->sendMessage($this->config->get("CancelPearl-Message")); //Cancel tp if they throw pearl on the floor and there is a block above (1 block gap)
                         }
                         $event->setCancelled();
@@ -104,8 +103,8 @@ class Main extends PluginBase implements Listener {
             }
         }
         if (!in_array($level->getBlockAt((int)$xb, (int)($y), (int)$zb)->getId(), $openblocks)) { //Cancel tp if there are blocks in their feet.
-            if ($this->config->get("PearlGlitching") === true) {
-                if ($this->config->get("CancelPearl-Message") !== false) {
+            if ($this->config->get("PearlGlitching")) {
+                if (!$this->config->get("CancelPearl-Message")) {
                     $entity->sendMessage($this->config->get("CancelPearl-Message"));
                 }
                 $event->setCancelled();
@@ -126,9 +125,9 @@ class Main extends PluginBase implements Listener {
         if ($this->config->get("BreakBlockGlitching") === true) {
             $player = $event->getPlayer();
             if ($player->getGamemode() !== 0) return;
-            if ($event->isCancelled() == True) {
-                $player->teleport(new Position($player->getX(), $player->getY(), $player->getZ(), $player->getLevel()), 1, 1);
-                if ($this->config->get("CancelBlockBreak-Message") !== false) {
+            if ($event->isCancelled()) {
+                $player->teleport(new Position($player), 1, 1);
+                if (!$this->config->get("CancelBlockBreak-Message")) {
                     $player->sendMessage($this->config->get("CancelBlockBreak-Message"));
                 }
             }
@@ -141,12 +140,12 @@ class Main extends PluginBase implements Listener {
      */
 
     public function fixBlockPlaceGlitch(BlockPlaceEvent $event) {
-        if ($this->config->get("PlaceBlockGlitching") === true) {
+        if ($this->config->get("PlaceBlockGlitching")) {
             $player = $event->getPlayer();
             if ($player->getGamemode() !== 0) return;
-            if ($event->isCancelled() == True) {
-                $player->teleport(new Position($player->getX(), $player->getY(), $player->getZ(), $player->getLevel()), 1, 1);
-                if ($this->config->get("CancelBlockPlace-Message") !== false) {
+            if ($event->isCancelled()) {
+                $player->teleport(new Position($player), 1, 1);
+                if (!$this->config->get("CancelBlockPlace-Message")) {
                     $player->sendMessage($this->config->get("CancelBlockPlace-Message"));
                 }
             }
@@ -157,10 +156,10 @@ class Main extends PluginBase implements Listener {
     //Fix for glitch: People putting a space before the slash in their commands to evade combat timer.
 
 	public function fixCommandSpace(PlayerCommandPreprocessEvent $event){
-        if ($this->config->get("CommandGlitching") === true) {
-            if((substr($event->getMessage(), 0, 2) == "/ ") or (substr($event->getMessage(), 0, 2) == "/\\") or (substr($event->getMessage(), 0, 2) == "/\"") or (substr($event->getMessage(), -1, 1) == "\\")){
+        if ($this->config->get("CommandGlitching")) {
+            if((substr($event->getMessage(), 0, 2) == "/ ") || (substr($event->getMessage(), 0, 2) == "/\\") || (substr($event->getMessage(), 0, 2) == "/\"") || (substr($event->getMessage(), -1, 1) === "\\")){
                 $event->setCancelled();
-                if ($this->config->get("CancelCommand-Message") !== false) {
+                if (!$this->config->get("CancelCommand-Message")) {
                     $event->getPlayer()->sendMessage($this->config->get("CancelCommand-Message"));
                 }
             }
