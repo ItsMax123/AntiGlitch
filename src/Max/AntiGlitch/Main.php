@@ -40,6 +40,7 @@ class Main extends PluginBase implements Listener {
 
     public function onTP(EntityTeleportEvent $event) {
         $entity = $event->getEntity();
+        if (!$entity instanceof Player) return;
         $level = $entity->getLevel();
         $to = $event->getTo(); //List of phasable blocks:
         $openblocks = [0, 446, 355, 171, 44, 182, 158, 160, 187, 107, 183, 185, 184, 186, 85, 113, 139, 163, 180, 134, 135, 136, 108, 114, 67, 53, 128, 109, 203, 164, 431, 429, 428, 427, 324, 430, 175, 38, 37, 6, 32, 39, 40, 31, 106, 111, 146, 54, 81, 130, 397, 27, 28, 66, 126, 70, 72, 147, 148, 145, 77, 143, 356, 404, 50, 76, 167, 96, 330, 120, 116, 151, 354, 131, 69, 65, 321, 389, 101, 78, 323, 379, 390, 323, 30, 208];  
