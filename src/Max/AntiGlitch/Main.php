@@ -88,7 +88,7 @@ class Main extends PluginBase implements Listener {
             if(in_array($level->getBlockAt((int)$xb, (int)($y + 0.000001), (int)$zb)->getId(), $openblocks)) {
                 if (!in_array($level->getBlockAt((int)$xb, (int)($y + 1.000001), (int)$zb)->getId(), $openblocks)){
                     if ($this->config->get("PearlGlitching")) {
-                        if (!$this->config->get("CancelPearl-Message")) {
+                        if ($this->config->get("CancelPearl-Message")) {
                             $entity->sendMessage($this->config->get("CancelPearl-Message")); //Cancel tp if they throw pearl on the floor and there is a block above (1 block gap)
                         }
                         $event->setCancelled();
@@ -104,7 +104,7 @@ class Main extends PluginBase implements Listener {
         }
         if (!in_array($level->getBlockAt((int)$xb, (int)($y), (int)$zb)->getId(), $openblocks)) { //Cancel tp if there are blocks in their feet.
             if ($this->config->get("PearlGlitching")) {
-                if (!$this->config->get("CancelPearl-Message")) {
+                if ($this->config->get("CancelPearl-Message")) {
                     $entity->sendMessage($this->config->get("CancelPearl-Message"));
                 }
                 $event->setCancelled();
@@ -127,7 +127,7 @@ class Main extends PluginBase implements Listener {
             if ($player->getGamemode() !== 0) return;
             if ($event->isCancelled()) {
                 $player->teleport(new Position($player), 1, 1);
-                if (!$this->config->get("CancelBlockBreak-Message")) {
+                if ($this->config->get("CancelBlockBreak-Message")) {
                     $player->sendMessage($this->config->get("CancelBlockBreak-Message"));
                 }
             }
@@ -145,7 +145,7 @@ class Main extends PluginBase implements Listener {
             if ($player->getGamemode() !== 0) return;
             if ($event->isCancelled()) {
                 $player->teleport(new Position($player), 1, 1);
-                if (!$this->config->get("CancelBlockPlace-Message")) {
+                if ($this->config->get("CancelBlockPlace-Message")) {
                     $player->sendMessage($this->config->get("CancelBlockPlace-Message"));
                 }
             }
@@ -159,7 +159,7 @@ class Main extends PluginBase implements Listener {
         if ($this->config->get("CommandGlitching")) {
             if((substr($event->getMessage(), 0, 2) == "/ ") || (substr($event->getMessage(), 0, 2) == "/\\") || (substr($event->getMessage(), 0, 2) == "/\"") || (substr($event->getMessage(), -1, 1) === "\\")){
                 $event->setCancelled();
-                if (!$this->config->get("CancelCommand-Message")) {
+                if ($this->config->get("CancelCommand-Message")) {
                     $event->getPlayer()->sendMessage($this->config->get("CancelCommand-Message"));
                 }
             }
