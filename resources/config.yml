@@ -1,5 +1,5 @@
 # Enable or disable glitching prevention for the following glitches: (true/false)
-PearlGlitching: true 
+PearlGlitching: true
 PlaceBlockGlitching: true
 BreakBlockGlitching: true
 CommandGlitching: true
