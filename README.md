@@ -21,7 +21,8 @@ If you do not have discord please create an issue on github. Please keep in mind
   - [x] Anti-Pearl Glitch (Enderpearling in certain areas in order to phase through blocks)
   - [x] Anti-PlaceBlocks Glitch (Placing blocks very fast in areas not allowed in order to get somewhere normally not accessible)
   - [x] Anti-BreakBlocks Glitch (Breaking blocks very fast in areas not allowed in order to get somewhere normally not accessible)
-  - [x] Anti-CommandSpace Glitch (Putting a space after the slash in a command in order to do commands when normally not allowed)
+  - [x] Anti-CommandSpace Glitch (Putting a space after the slash (and other glitched command formats) in a command in order to do commands when normally not allowed)
+  - [x] Anti-OpenDoor Glitch (Opening a door/fencegate/trapdoor very fast in areas not allowed in order to get somewhere normally not accessible)
 - Coming soon...
   - [ ] Maybe more customization in config if requested.
   - [ ] If you know any glitches please let me know and I will try to fix it.

@@ -12,7 +12,7 @@ use pocketmine\utils\Config;
 use pocketmine\entity\projectile\EnderPearl;
 use pocketmine\level\{Position, Location};
 
-use pocketmine\event\player\PlayerCommandPreprocessEvent;
+use pocketmine\event\player\{PlayerCommandPreprocessEvent, PlayerInteractEvent};
 use pocketmine\event\entity\{ProjectileHitEvent, EntityTeleportEvent};
 use pocketmine\event\block\{BlockBreakEvent, BlockPlaceEvent};
 
@@ -24,6 +24,29 @@ class Main extends PluginBase implements Listener {
         $this->saveResource("config.yml");
         $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML);
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
+		$this->DefaultConfig = array(
+			"PearlGlitching" => true,
+			"PlaceBlockGlitching" => true,
+			"BreakBlockGlitching" => true,
+            "OpenDoorGlitching" => true,
+			"CommandGlitching" => true,
+			"CancelPearl-Message" => "§7[§bAntiGlitch§7] §cPearl Cancelled due to suffocation!",
+			"CancelBlockPlace-Message" => false,
+			"CancelBlockBreak-Message" => false,
+            "CancelOpenDoor-Message" => false,
+			"CancelCommand-Message" => "§7[§bAntiGlitch§7] §cCommand Cancelled due to invalid format!"
+		);
+
+		//Automatically update config file if plugin gets updated
+		if ($this->config->getAll() != $this->DefaultConfig) {
+			foreach ($this->DefaultConfig as $key => $data) {
+				if($this->config->exists($key)) {
+					$this->DefaultConfig[$key] = $this->config->get($key);
+				}
+			}
+			$this->config->setAll($this->DefaultConfig);
+			$this->config->save();
+		}
     }
 
 
@@ -114,6 +137,22 @@ class Main extends PluginBase implements Listener {
         $event->setTo(new Location($x, $y, $z));
     }
 
+	public function onInteract(PlayerInteractEvent $event){
+		if ($this->config->get("OpenDoorGlitching") === true) {
+			if ($event->getAction() !== PlayerInteractEvent::RIGHT_CLICK_BLOCK) return;
+			$player = $event->getPlayer();
+			if ($player->getGamemode() !== 0) return;
+			$block = $event->getBlock();
+			if ($event->isCancelled()) {
+				if (in_array($block->getId(), [107, 183, 184, 185, 186, 187, 324, 427, 428, 429, 430, 431, 96, 167, 330])) {
+					$player->teleport(new Position($player->getX(), $player->getY(), $player->getZ(), $player->getLevel()), 1, 1);
+					if ($this->config->get("CancelOpenDoor-Message")) {
+						$player->sendMessage($this->config->get("CancelOpenDoor-Message"));
+					}
+				}
+			}
+		}
+	}
 
     //Fix for glitch: Placing or mining blocks very fast in areas not allowed to in order to get somewhere normally not accessible.
 
@@ -127,10 +166,10 @@ class Main extends PluginBase implements Listener {
             $player = $event->getPlayer();
             if ($player->getGamemode() !== 0) return;
             if ($event->isCancelled()) {
-                $player->teleport(new Position($player->getX(), $player->getY(), $player->getZ(), $player->getLevel()), 1, 1);
-                if ($this->config->get("CancelBlockBreak-Message")) {
-                    $player->sendMessage($this->config->get("CancelBlockBreak-Message"));
-                }
+				$player->teleport(new Position($player->getX(), $player->getY(), $player->getZ(), $player->getLevel()), 1, 1);
+				if ($this->config->get("CancelBlockBreak-Message")) {
+					$player->sendMessage($this->config->get("CancelBlockBreak-Message"));
+				}
             }
         }
     }
