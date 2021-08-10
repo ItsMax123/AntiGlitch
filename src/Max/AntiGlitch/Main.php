@@ -100,7 +100,7 @@ class Main extends PluginBase implements Listener {
         }
 	  else { 
             foreach (range(0.1, 1.8, 0.1) as $n) {
-                if (!in_array($level->getBlockAt((int)$xb, (int)($y + $n), (int)$zb)->getId(), $openblocks)) $y = $y - (1 - $n); //Determine how far down they should be teleported if there is a block above them:
+                if (!in_array($level->getBlockAt((int)$xb, (int)($y + $n), (int)$zb)->getId(), $openblocks)) $y = $y - (2 - $n); //Determine how far down they should be teleported if there is a block above them:
             }
         }
         if (!in_array($level->getBlockAt((int)$xb, (int)($y), (int)$zb)->getId(), $openblocks)) { //Cancel tp if there are blocks in their feet.
