@@ -180,11 +180,11 @@ class Main extends PluginBase implements Listener {
      */
 
     public function fixBlockPlaceGlitch(BlockPlaceEvent $event) {
-        if ($this->config->get("PlaceBlockGlitching")) {
+        if ($this->config->get("PlaceBlockGlitching") === true) {
             $player = $event->getPlayer();
             if ($player->getGamemode() !== 0) return;
             if ($event->isCancelled()) {
-                $player->teleport(new Position($player), 1, 1);
+				$player->teleport(new Position($player->getX(), $player->getY(), $player->getZ(), $player->getLevel()), 1, 1);
                 if ($this->config->get("CancelBlockPlace-Message")) {
                     $player->sendMessage($this->config->get("CancelBlockPlace-Message"));
                 }
