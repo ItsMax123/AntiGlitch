@@ -138,14 +138,14 @@ class Main extends PluginBase implements Listener {
     }
 
 	public function onInteract(PlayerInteractEvent $event){
-		if ($this->config->get("OpenDoorGlitching") === true) {
+		if ($this->config->get("OpenDoorGlitching")) {
 			if ($event->getAction() !== PlayerInteractEvent::RIGHT_CLICK_BLOCK) return;
 			$player = $event->getPlayer();
 			if ($player->getGamemode() !== 0) return;
 			$block = $event->getBlock();
 			if ($event->isCancelled()) {
 				if (in_array($block->getId(), [107, 183, 184, 185, 186, 187, 324, 427, 428, 429, 430, 431, 96, 167, 330])) {
-					$player->teleport(new Position($player->getX(), $player->getY(), $player->getZ(), $player->getLevel()), 1, 1);
+					$player->teleport($player, 1, 1);
 					if ($this->config->get("CancelOpenDoor-Message")) {
 						$player->sendMessage($this->config->get("CancelOpenDoor-Message"));
 					}
@@ -162,11 +162,11 @@ class Main extends PluginBase implements Listener {
      */
 
     public function fixBlockBreakGlitch(BlockBreakEvent $event) {
-        if ($this->config->get("BreakBlockGlitching") === true) {
+        if ($this->config->get("BreakBlockGlitching")) {
             $player = $event->getPlayer();
             if ($player->getGamemode() !== 0) return;
             if ($event->isCancelled()) {
-				$player->teleport(new Position($player->getX(), $player->getY(), $player->getZ(), $player->getLevel()), 1, 1);
+				$player->teleport($player, 1, 1);
 				if ($this->config->get("CancelBlockBreak-Message")) {
 					$player->sendMessage($this->config->get("CancelBlockBreak-Message"));
 				}
@@ -180,11 +180,11 @@ class Main extends PluginBase implements Listener {
      */
 
     public function fixBlockPlaceGlitch(BlockPlaceEvent $event) {
-        if ($this->config->get("PlaceBlockGlitching") === true) {
+        if ($this->config->get("PlaceBlockGlitching")) {
             $player = $event->getPlayer();
             if ($player->getGamemode() !== 0) return;
             if ($event->isCancelled()) {
-				$player->teleport(new Position($player->getX(), $player->getY(), $player->getZ(), $player->getLevel()), 1, 1);
+				$player->teleport($player, 1, 1);
                 if ($this->config->get("CancelBlockPlace-Message")) {
                     $player->sendMessage($this->config->get("CancelBlockPlace-Message"));
                 }
