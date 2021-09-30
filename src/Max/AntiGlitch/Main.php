@@ -50,91 +50,79 @@ class Main extends PluginBase implements Listener {
     }
 
 
-    //Fix for glitch: Enderpearling in corners in order to phase through blocks.
-
-    public function onPearlLandBlock(ProjectileHitEvent $event) {
-        //$block = $event->getBlockHit();
-        $pearl = $event->getEntity();
+        public function onPearlLandBlock(ProjectileHitEvent $event) {
         $player = $event->getEntity()->getOwningEntity();
-        if (!$player instanceof Player && !$pearl instanceof EnderPearl) return;
-        $this->pearlland[$player->getName()] = time();
+        if ($player instanceof Player && $event->getEntity() instanceof EnderPearl) $this->pearlland[$player->getName()] = time();
     }
 
     public function onTP(EntityTeleportEvent $event) {
         $entity = $event->getEntity();
         if (!$entity instanceof Player) return;
         $level = $entity->getLevel();
-        $to = $event->getTo(); //List of phasable blocks:
-        $openblocks = [0, 446, 355, 171, 44, 182, 158, 160, 187, 107, 183, 185, 184, 186, 85, 113, 139, 163, 180, 134, 135, 136, 108, 114, 67, 53, 128, 109, 203, 164, 431, 429, 428, 427, 324, 430, 175, 38, 37, 6, 32, 39, 40, 31, 106, 111, 146, 54, 81, 130, 397, 27, 28, 66, 126, 70, 72, 147, 148, 145, 77, 143, 356, 404, 50, 76, 167, 96, 330, 120, 116, 151, 354, 131, 69, 65, 321, 389, 101, 78, 323, 379, 390, 323, 30, 208];  
-        if (!isset($this->pearlland[$entity->getName()])) return; //If tp was caused by enderpearl
-        if (time() - $this->pearlland[$entity->getName()] > 0.1) return; //If tp was (most likely) caused by enderpearl
+        $to = $event->getTo();
+        if (!isset($this->pearlland[$entity->getName()])) return;
+        if (time() - $this->pearlland[$entity->getName()] > 0.1) return; //Check if teleportation was caused by enderpearl (by checking is a projectile landed at the same time as teleportation)
 
+        //Get coords and adjust for negative quadrents.
         $x = $to->getX();
         $y = $to->getY();
         $z = $to->getZ();
-        $xb = $to->getX();
-        $yb = $to->getY();
-        $zb = $to->getZ();
+        if($x < 0) $x = $x - 1;
+        if($z < 0) $z = $z - 1;
 
-        if($x < 0) {
-            $xb = $x - 1;  //Adjust coords if in a negative quadrant
-        } 
-        if($z < 0) {
-            $zb = $z - 1;  //Adjust coords if in a negative quadrant
-        }
+        //If pearl is in a block as soon as it lands (meaning it was shot into a block over a fence), put it back down in the fence.
+        if($this->isInHitbox($level, $x, $y, $z)) $y = $y - 0.5;
 
-        if ($y === ((int)$y) + 0.5) $y = (int)$y; //For slabs
+        //Adjust sides
+        if($this->isInHitbox($level, ($x + 0.01), $y, $z)) $x = $x - 0.3;
+        if($this->isInHitbox($level, ($x - 0.01), $y, $z)) $x = $x + 0.3;
+        if($this->isInHitbox($level, $x, $y, ($z - 0.01))) $z = $z + 0.3;
+        if($this->isInHitbox($level, $x, $y, ($z + 0.01))) $z = $z - 0.3;
 
-
-        if (round($x) === $x) { //Pearled on the $x axis
-            if(in_array($level->getBlockAt((int)($xb + 0.000001), (int)$y, (int)$zb)->getId(), $openblocks)) {
-                $x = $x + 0.3;
-                $xb = $xb + 0.000001;
-            }
-            elseif(in_array($level->getBlockAt((int)($xb - 0.000001), (int)$y, (int)$zb)->getId(), $openblocks)) {
-                $x = $x - 0.3;
-                $xb = $xb - 0.000001;
+        //Now that the point of landing is safe, make sure the whole body would be sage upon landing:
+        $yb = $y;
+        foreach (range(0, 1.9, 0.1) as $n) {
+            if($this->isInHitbox($level, $x, $yb - $n, $z)) {
+                break;
+            } else {
+                $y = $yb - $n;
             }
         }
 
-        if (round($z) === $z) { //Pearled on the $z axis
-            if(in_array($level->getBlockAt((int)$xb, (int)$y, (int)($zb + 0.000001))->getId(), $openblocks)) {
-                $z = $z + 0.3;
-                $zb = $zb + 0.000001;
-            }
-            elseif(in_array($level->getBlockAt((int)$xb, (int)$y, (int)($zb - 0.000001))->getId(), $openblocks)) {
-                $z = $z - 0.3;
-                $zb = $zb - 0.000001;
-            }
-        }
-
-        if (round($y) === $y) { //Pearled on the $y axis
-            if(in_array($level->getBlockAt((int)$xb, (int)($y + 0.000001), (int)$zb)->getId(), $openblocks)) {
-                if (!in_array($level->getBlockAt((int)$xb, (int)($y + 1.000001), (int)$zb)->getId(), $openblocks)){
-                    if ($this->config->get("PearlGlitching")) {
-                        if ($this->config->get("CancelPearl-Message")) {
-                            $entity->sendMessage($this->config->get("CancelPearl-Message")); //Cancel tp if they throw pearl on the floor and there is a block above (1 block gap)
-                        }
-                        $event->setCancelled();
-                    }
-                }
-            }
-            if(in_array($level->getBlockAt((int)$xb, (int)($y - 0.000001), (int)$zb)->getId(), $openblocks)) $y = $y - 2.0;
-        }
-	  else { 
+        //Prevent pearling in 1 block high areas (configurable in config)
+        if ($this->config->get("PearlGlitching")) {
             foreach (range(0.1, 1.8, 0.1) as $n) {
-                if (!in_array($level->getBlockAt((int)$xb, (int)($y + $n), (int)$zb)->getId(), $openblocks)) $y = $y - (2 - $n); //Determine how far down they should be teleported if there is a block above them:
-            }
-        }
-        if (!in_array($level->getBlockAt((int)$xb, (int)($y), (int)$zb)->getId(), $openblocks)) { //Cancel tp if there are blocks in their feet.
-            if ($this->config->get("PearlGlitching")) {
-                if ($this->config->get("CancelPearl-Message")) {
-                    $entity->sendMessage($this->config->get("CancelPearl-Message"));
+                if($this->isInHitbox($level, $x, ($y + $n), $z)) {
+                    if ($this->config->get("CancelPearl-Message")) {
+                        $entity->sendMessage($this->config->get("CancelPearl-Message"));
+                    }
+                    $event->setCancelled();
+                    break;
                 }
-                $event->setCancelled();
             }
         }
+
+        //Reajust for negative quadrents
+        if($x < 0) $x = $x + 1;
+        if($z < 0) $z = $z + 1;
+
+        //Send new safe location
         $event->setTo(new Location($x, $y, $z));
+    }
+
+    //Check if a set of coords are inside a blocks hitbox
+    public function isInHitbox($level, $xx, $yy, $zz) {
+        if(!isset($level->getBlockAt((int)$xx, (int)$yy, (int)$zz)->getCollisionBoxes()[0])) return False;
+        $block = $level->getBlockAt((int)$xx, (int)$yy, (int)$zz)->getCollisionBoxes()[0];
+
+        if($xx < 0) $xx = $xx + 1;
+        if($zz < 0) $zz = $zz + 1;
+
+        if (($block->minX < $xx) AND ($xx < $block->maxX) AND ($block->minY < $yy) AND ($yy < $block->maxY) AND ($block->minZ < $zz) AND ($zz < $block->maxZ)) {
+            return True;
+        } else {
+            return False;
+        }
     }
 
 	public function onInteract(PlayerInteractEvent $event){
