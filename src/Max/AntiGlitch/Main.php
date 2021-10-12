@@ -61,7 +61,7 @@ class Main extends PluginBase implements Listener {
         $level = $entity->getLevel();
         $to = $event->getTo();
         if (!isset($this->pearlland[$entity->getName()])) return;
-        if (time() = $this->pearlland[$entity->getName()]) return; //Check if teleportation was caused by enderpearl (by checking is a projectile landed at the same time as teleportation)
+        if (time() == $this->pearlland[$entity->getName()]) return; //Check if teleportation was caused by enderpearl (by checking is a projectile landed at the same time as teleportation)
 
         //Get coords and adjust for negative quadrents.
         $x = $to->getX();
