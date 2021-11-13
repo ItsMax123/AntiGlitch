@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Max\AntiGlitch;
 
+use pocketmine\math\Vector3;
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
 
@@ -25,12 +26,12 @@ class Main extends PluginBase implements Listener {
         $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML);
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
 		$this->DefaultConfig = array(
-			"PearlGlitching" => true,
+			"PearlGlitching" => false,
 			"PlaceBlockGlitching" => true,
 			"BreakBlockGlitching" => true,
             "OpenDoorGlitching" => true,
 			"CommandGlitching" => true,
-			"CancelPearl-Message" => "§7[§bAntiGlitch§7] §cPearl Cancelled due to suffocation!",
+			"CancelPearl-Message" => false,
 			"CancelBlockPlace-Message" => false,
 			"CancelBlockBreak-Message" => false,
             "CancelOpenDoor-Message" => false,
@@ -61,48 +62,69 @@ class Main extends PluginBase implements Listener {
         $level = $entity->getLevel();
         $to = $event->getTo();
         if (!isset($this->pearlland[$entity->getName()])) return;
-        if (time() == $this->pearlland[$entity->getName()]) return; //Check if teleportation was caused by enderpearl (by checking is a projectile landed at the same time as teleportation)
+        if (time() != $this->pearlland[$entity->getName()]) return; //Check if teleportation was caused by enderpearl (by checking is a projectile landed at the same time as teleportation) TODO Find a less hacky way of doing this?
 
-        //Get coords and adjust for negative quadrents.
+        //Get coords and adjust for negative quadrants.
         $x = $to->getX();
         $y = $to->getY();
         $z = $to->getZ();
         if($x < 0) $x = $x - 1;
         if($z < 0) $z = $z - 1;
 
-        //If pearl is in a block as soon as it lands (meaning it was shot into a block over a fence), put it back down in the fence.
+        //If pearl is in a block as soon as it lands (which could only mean it was shot into a block over a fence), put it back down in the fence. TODO Find a less hacky way of doing this?
         if($this->isInHitbox($level, $x, $y, $z)) $y = $y - 0.5;
 
-        //Adjust sides
-        if($this->isInHitbox($level, ($x + 0.01), $y, $z)) $x = $x - 0.3;
-        if($this->isInHitbox($level, ($x - 0.01), $y, $z)) $x = $x + 0.3;
-        if($this->isInHitbox($level, $x, $y, ($z - 0.01))) $z = $z + 0.3;
-        if($this->isInHitbox($level, $x, $y, ($z + 0.01))) $z = $z - 0.3;
+        //Try to find a good place to teleport.
+        foreach (range(0, 1.9, 0.05) as $n) {
+			$xb = $x;
+			$yb = ($y - $n);
+			$zb = $z;
 
-        //Now that the point of landing is safe, make sure the whole body would be sage upon landing:
-        $yb = $y;
-        foreach (range(0, 1.9, 0.1) as $n) {
-            if($this->isInHitbox($level, $x, $yb - $n, $z)) {
+			if ($this->isInHitbox($level, ($x + 0.05), $yb, $z)) $xb = $xb - 0.3;
+			if ($this->isInHitbox($level, ($x - 0.05), $yb, $z)) $xb = $xb + 0.3;
+			if ($this->isInHitbox($level, $x, $yb, ($z - 0.05))) $zb = $zb + 0.3;
+			if ($this->isInHitbox($level, $x, $yb, ($z + 0.05))) $zb = $zb - 0.3;
+
+
+            if($this->isInHitbox($level, $xb, $yb, $zb)) {
                 break;
             } else {
-                $y = $yb - $n;
-            }
+				$x = $xb;
+				$y = $yb;
+				$z = $zb;
+			}
         }
 
-        //Prevent pearling in 1 block high areas (configurable in config)
-        if ($this->config->get("PearlGlitching")) {
-            foreach (range(0.1, 1.8, 0.1) as $n) {
-                if($this->isInHitbox($level, $x, ($y + $n), $z)) {
-                    if ($this->config->get("CancelPearl-Message")) {
-                        $entity->sendMessage($this->config->get("CancelPearl-Message"));
-                    }
-                    $event->setCancelled();
-                    break;
-                }
-            }
-        }
+		//Check if pearl lands in an area too small for the player
+		foreach (range(0.1, 1.8, 0.1) as $n) {
+			if($this->isInHitbox($level, $x, ($y + $n), $z)) {
 
-        //Reajust for negative quadrents
+				//Teleport the player into the middle of the block so they can't phase into an adjacent block.
+				$blockHitBox = $level->getBlockAt((int)$xb, (int)$yb, (int)$zb)->getCollisionBoxes()[0];
+				if($x < 0) {
+					$x = (($blockHitBox->minX + $blockHitBox->maxX) / 2) - 1;
+				} else {
+					$x = ($blockHitBox->minX + $blockHitBox->maxX) / 2;
+				}
+				if($z < 0) {
+					$z = (($blockHitBox->minZ + $blockHitBox->maxZ) / 2) - 1;
+				} else {
+					$z = ($blockHitBox->minZ + $blockHitBox->maxZ) / 2;
+				}
+
+				//Prevent pearling into areas too small (configurable in config)
+				if ($this->config->get("PearlGlitching")) {
+					if ($this->config->get("CancelPearl-Message")) {
+						$entity->sendMessage($this->config->get("CancelPearl-Message"));
+					}
+					$event->setCancelled();
+				}
+
+				break;
+			}
+		}
+
+        //Readjust for negative quadrants
         if($x < 0) $x = $x + 1;
         if($z < 0) $z = $z + 1;
 
@@ -110,19 +132,15 @@ class Main extends PluginBase implements Listener {
         $event->setTo(new Location($x, $y, $z));
     }
 
-    //Check if a set of coords are inside a blocks hitbox
-    public function isInHitbox($level, $xx, $yy, $zz) {
-        if(!isset($level->getBlockAt((int)$xx, (int)$yy, (int)$zz)->getCollisionBoxes()[0])) return False;
-        $block = $level->getBlockAt((int)$xx, (int)$yy, (int)$zz)->getCollisionBoxes()[0];
-
-        if($xx < 0) $xx = $xx + 1;
-        if($zz < 0) $zz = $zz + 1;
-
-        if (($block->minX < $xx) AND ($xx < $block->maxX) AND ($block->minY < $yy) AND ($yy < $block->maxY) AND ($block->minZ < $zz) AND ($zz < $block->maxZ)) {
-            return True;
-        } else {
-            return False;
-        }
+    //Check if a set of coords are inside a block's HitBox
+    public function isInHitbox($level, $x, $y, $z) {
+        if(!isset($level->getBlockAt((int)$x, (int)$y, (int)$z)->getCollisionBoxes()[0])) return False;
+        foreach ($level->getBlockAt((int)$x, (int)$y, (int)$z)->getCollisionBoxes() as $blockHitBox) {
+			if($x < 0) $x = $x + 1;
+			if($z < 0) $z = $z + 1;
+			if (($blockHitBox->minX < $x) AND ($x < $blockHitBox->maxX) AND ($blockHitBox->minY < $y) AND ($y < $blockHitBox->maxY) AND ($blockHitBox->minZ < $z) AND ($z < $blockHitBox->maxZ)) return True;
+		}
+        return False;
     }
 
 	public function onInteract(PlayerInteractEvent $event){
@@ -133,7 +151,21 @@ class Main extends PluginBase implements Listener {
 			$block = $event->getBlock();
 			if ($event->isCancelled()) {
 				if (in_array($block->getId(), [107, 183, 184, 185, 186, 187, 324, 427, 428, 429, 430, 431, 96, 167, 330])) {
-					$player->teleport($player, 1, 1);
+
+					$player->teleport($player);
+					$dir = $player->getDirection();
+					$x = 0;
+					$y = 0;
+					$z = 0;
+					if (($block->getY() <= $player->getY() - 1) AND ($block->getY() >= $player->getY() - 1.3)) $y = 0.3; #If block is under the player
+					elseif (($block->getY() >= (int)$player->getY()) AND ($block->getY() <= (int)$player->getY() + 2)) { #If block is on the side of the player
+						if ($dir == 0) $x = -0.2;
+						elseif ($dir == 1) $z = -0.2;
+						elseif ($dir == 2) $x = 0.2;
+						elseif ($dir == 3) $z = 0.2;
+					}
+					$player->setMotion(new Vector3($x, $y, $z));
+
 					if ($this->config->get("CancelOpenDoor-Message")) {
 						$player->sendMessage($this->config->get("CancelOpenDoor-Message"));
 					}
@@ -142,19 +174,30 @@ class Main extends PluginBase implements Listener {
 		}
 	}
 
-    //Fix for glitch: Placing or mining blocks very fast in areas not allowed to in order to get somewhere normally not accessible.
-
     /**
      * @priority HIGHEST
      * @ignoreCancelled False
      */
 
-    public function fixBlockBreakGlitch(BlockBreakEvent $event) {
+    public function onBlockBreak(BlockBreakEvent $event) {
         if ($this->config->get("BreakBlockGlitching")) {
             $player = $event->getPlayer();
+            $block = $event->getBlock();
             if ($player->getGamemode() !== 0) return;
             if ($event->isCancelled()) {
-				$player->teleport($player, 1, 1);
+				$player->teleport($player);
+				$dir = $player->getDirection();
+				$x = 0;
+				$y = 0;
+				$z = 0;
+				if (($block->getY() <= $player->getY() - 1) AND ($block->getY() >= $player->getY() - 1.3)) $y = 0.3; #If block is under the player
+				elseif (($block->getY() >= (int)$player->getY()) AND ($block->getY() <= (int)$player->getY() + 2)) { #If block is on the side of the player
+					if ($dir == 0) $x = -0.2;
+					elseif ($dir == 1) $z = -0.2;
+					elseif ($dir == 2) $x = 0.2;
+					elseif ($dir == 3) $z = 0.2;
+				}
+				$player->setMotion(new Vector3($x, $y, $z));
 				if ($this->config->get("CancelBlockBreak-Message")) {
 					$player->sendMessage($this->config->get("CancelBlockBreak-Message"));
 				}
@@ -167,12 +210,14 @@ class Main extends PluginBase implements Listener {
      * @ignoreCancelled False
      */
 
-    public function fixBlockPlaceGlitch(BlockPlaceEvent $event) {
+    public function onBlockPlace(BlockPlaceEvent $event) {
         if ($this->config->get("PlaceBlockGlitching")) {
             $player = $event->getPlayer();
+			$block = $event->getBlock();
             if ($player->getGamemode() !== 0) return;
+			$event->setCancelled();
             if ($event->isCancelled()) {
-				$player->teleport($player, 1, 1);
+				$player->teleport($player, $player->getYaw(), 1);
                 if ($this->config->get("CancelBlockPlace-Message")) {
                     $player->sendMessage($this->config->get("CancelBlockPlace-Message"));
                 }
@@ -180,10 +225,7 @@ class Main extends PluginBase implements Listener {
         }
     }
 
-
-    //Fix for glitch: People putting a space before the slash in their commands to evade combat timer.
-
-	public function fixCommandSpace(PlayerCommandPreprocessEvent $event){
+	public function onCommandPre(PlayerCommandPreprocessEvent $event){
         if ($this->config->get("CommandGlitching")) {
             if((substr($event->getMessage(), 0, 2) == "/ ") || (substr($event->getMessage(), 0, 2) == "/\\") || (substr($event->getMessage(), 0, 2) == "/\"") || (substr($event->getMessage(), -1, 1) === "\\")){
                 $event->setCancelled();
