@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace Max\AntiGlitch;
 
+use pocketmine\block\Block;
+use pocketmine\block\Door;
+use pocketmine\block\FenceGate;
+use pocketmine\block\IronDoor;
+use pocketmine\block\IronTrapdoor;
+use pocketmine\block\Trapdoor;
+use pocketmine\item\ItemBlock;
 use pocketmine\math\Vector3;
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
 
 use pocketmine\Player;
+use pocketmine\scheduler\Task;
 use pocketmine\utils\Config;
 use pocketmine\entity\projectile\EnderPearl;
 use pocketmine\level\{Position, Location};
@@ -26,11 +34,11 @@ class Main extends PluginBase implements Listener {
         $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML);
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
 		$this->DefaultConfig = array(
-			"PearlGlitching" => false,
-			"PlaceBlockGlitching" => true,
-			"BreakBlockGlitching" => true,
-            "OpenDoorGlitching" => true,
-			"CommandGlitching" => true,
+			"Prevent-Pearling-In-Small-Areas" => false,
+			"Prevent-Place-Block-Glitching" => true,
+			"Prevent-Break-Block-Glitching" => true,
+            "Prevent-Open-Door-Glitching" => true,
+			"Prevent-Command-Glitching" => true,
 			"CancelPearl-Message" => false,
 			"CancelBlockPlace-Message" => false,
 			"CancelBlockBreak-Message" => false,
@@ -113,7 +121,7 @@ class Main extends PluginBase implements Listener {
 				}
 
 				//Prevent pearling into areas too small (configurable in config)
-				if ($this->config->get("PearlGlitching")) {
+				if ($this->config->get("Prevent-Pearling-In-Small-Areas")) {
 					if ($this->config->get("CancelPearl-Message")) {
 						$entity->sendMessage($this->config->get("CancelPearl-Message"));
 					}
@@ -143,31 +151,69 @@ class Main extends PluginBase implements Listener {
         return False;
     }
 
-	public function onInteract(PlayerInteractEvent $event){
-		if ($this->config->get("OpenDoorGlitching")) {
-			if ($event->getAction() !== PlayerInteractEvent::RIGHT_CLICK_BLOCK) return;
-			$player = $event->getPlayer();
-			if ($player->getGamemode() !== 0) return;
-			$block = $event->getBlock();
-			if ($event->isCancelled()) {
-				if (in_array($block->getId(), [107, 183, 184, 185, 186, 187, 324, 427, 428, 429, 430, 431, 96, 167, 330])) {
+	/**
+	 * @priority HIGHEST
+	 * @ignoreCancelled False
+	 */
 
-					$player->teleport($player);
+	public function onInteract(PlayerInteractEvent $event)
+	{
+		if ($event->getAction() !== PlayerInteractEvent::RIGHT_CLICK_BLOCK) return;
+		$player = $event->getPlayer();
+		if ($player->isCreative() or $player->isSpectator()) return;
+		$block = $event->getBlock();
+		if ($event->isCancelled()) {
+			if ($block instanceof Door or $block instanceof FenceGate or $block instanceof Trapdoor) {
+				if ($this->config->get("Prevent-Open-Door-Glitching")) {
 					$dir = $player->getDirection();
-					$x = 0;
-					$y = 0;
-					$z = 0;
-					if (($block->getY() <= $player->getY() - 1) AND ($block->getY() >= $player->getY() - 1.3)) $y = 0.3; #If block is under the player
-					elseif (($block->getY() >= (int)$player->getY()) AND ($block->getY() <= (int)$player->getY() + 2)) { #If block is on the side of the player
-						if ($dir == 0) $x = -0.2;
-						elseif ($dir == 1) $z = -0.2;
-						elseif ($dir == 2) $x = 0.2;
-						elseif ($dir == 3) $z = 0.2;
+					$x = $player->getX();
+					$y = $player->getY();
+					$z = $player->getZ();
+					$pitch = 85;
+					$playerX = $player->getX();
+					$playerZ = $player->getZ();
+					if ($playerX < 0) $playerX = $playerX - 1;
+					if ($playerZ < 0) $playerZ = $playerZ - 1;
+					if (($block->getX() == (int)$playerX) and ($block->getZ() == (int)$playerZ) and ($player->getY() > $block->getY())) { #If block is under the player
+						foreach ($block->getCollisionBoxes() as $blockHitBox) {
+							$y = max([$y, $blockHitBox->maxY + 0.01]);
+							$pitch = 35;
+						}
+					} else { #If block is on the side of the player
+						if ($dir == 0) {
+							foreach ($block->getCollisionBoxes() as $blockHitBox) {
+								$x = min([$x, $blockHitBox->minX - 0.31]);
+							}
+						} elseif ($dir == 1) {
+							foreach ($block->getCollisionBoxes() as $blockHitBox) {
+								$z = min([$z, $blockHitBox->minZ - 0.31]);
+							}
+						} elseif ($dir == 2) {
+							foreach ($block->getCollisionBoxes() as $blockHitBox) {
+								$x = max([$x, $blockHitBox->maxX + 0.31]);
+							}
+						} elseif ($dir == 3) {
+							foreach ($block->getCollisionBoxes() as $blockHitBox) {
+								$z = max([$z, $blockHitBox->maxZ + 0.31]);
+							}
+						}
 					}
-					$player->setMotion(new Vector3($x, $y, $z));
 
-					if ($this->config->get("CancelOpenDoor-Message")) {
-						$player->sendMessage($this->config->get("CancelOpenDoor-Message"));
+					if ($this->config->get("CancelOpenDoor-Message")) $player->sendMessage($this->config->get("CancelOpenDoor-Message"));
+
+					$player->teleport(new Vector3($x, $y, $z), $player->getYaw(), $pitch);
+				}
+			} else {
+				if ($this->config->get("Prevent-Place-Block-Glitching")) {
+					if ($player->getInventory()->getItemInHand() instanceof ItemBlock and $player->getInventory()->getItemInHand()->getId() !== 0) {
+						$playerX = $player->getX();
+						$playerZ = $player->getZ();
+						if ($playerX < 0) $playerX = $playerX - 1;
+						if ($playerZ < 0) $playerZ = $playerZ - 1;
+						if (($block->getX() == (int)$playerX) and ($block->getZ() == (int)$playerZ) and ($player->getY() > $block->getY())) { #If block is under the player
+							$player->teleport(new Vector3($player->getX(), $player->getY() - 0.3, $player->getZ()));
+							if ($this->config->get("CancelBlockPlace-Message")) $player->sendMessage($this->config->get("CancelBlockPlace-Message"));
+						}
 					}
 				}
 			}
@@ -180,24 +226,43 @@ class Main extends PluginBase implements Listener {
      */
 
     public function onBlockBreak(BlockBreakEvent $event) {
-        if ($this->config->get("BreakBlockGlitching")) {
+        if ($this->config->get("Prevent-Break-Block-Glitching")) {
             $player = $event->getPlayer();
             $block = $event->getBlock();
-            if ($player->getGamemode() !== 0) return;
+			if ($player->isCreative() or $player->isSpectator()) return;
             if ($event->isCancelled()) {
-				$player->teleport($player);
 				$dir = $player->getDirection();
-				$x = 0;
-				$y = 0;
-				$z = 0;
-				if (($block->getY() <= $player->getY() - 1) AND ($block->getY() >= $player->getY() - 1.3)) $y = 0.3; #If block is under the player
-				elseif (($block->getY() >= (int)$player->getY()) AND ($block->getY() <= (int)$player->getY() + 2)) { #If block is on the side of the player
-					if ($dir == 0) $x = -0.2;
-					elseif ($dir == 1) $z = -0.2;
-					elseif ($dir == 2) $x = 0.2;
-					elseif ($dir == 3) $z = 0.2;
+				$x = $player->getX();
+				$y = $player->getY();
+				$z = $player->getZ();
+				$playerX = $player->getX();
+				$playerZ = $player->getZ();
+				if($playerX < 0) $playerX = $playerX - 1;
+				if($playerZ < 0) $playerZ = $playerZ - 1;
+				if (($block->getX() == (int)$playerX) AND ($block->getZ() == (int)$playerZ) AND ($player->getY() > $block->getY())) { #If block is under the player
+					foreach ($block->getCollisionBoxes() as $blockHitBox) {
+						$y = max([$y, $blockHitBox->maxY]);
+					}
+				} else { #If block is on the side of the player
+					if ($dir == 0) {
+						foreach ($block->getCollisionBoxes() as $blockHitBox) {
+							$x = min([$x, $blockHitBox->minX - 0.31]);
+						}
+					} elseif ($dir == 1) {
+						foreach ($block->getCollisionBoxes() as $blockHitBox) {
+							$z = min([$z, $blockHitBox->minZ - 0.31]);
+						}
+					} elseif ($dir == 2) {
+						foreach ($block->getCollisionBoxes() as $blockHitBox) {
+							$x = max([$x, $blockHitBox->maxX + 0.31]);
+						}
+					} elseif ($dir == 3) {
+						foreach ($block->getCollisionBoxes() as $blockHitBox) {
+							$z = max([$z, $blockHitBox->maxZ + 0.31]);
+						}
+					}
 				}
-				$player->setMotion(new Vector3($x, $y, $z));
+				$player->teleport(new Vector3($x, $y, $z));
 				if ($this->config->get("CancelBlockBreak-Message")) {
 					$player->sendMessage($this->config->get("CancelBlockBreak-Message"));
 				}
@@ -205,28 +270,31 @@ class Main extends PluginBase implements Listener {
         }
     }
 
-    /**
-     * @priority HIGHEST
-     * @ignoreCancelled False
-     */
+	/**
+	 * @priority HIGHEST
+	 * @ignoreCancelled False
+	 */
 
     public function onBlockPlace(BlockPlaceEvent $event) {
-        if ($this->config->get("PlaceBlockGlitching")) {
+        if ($this->config->get("Prevent-Place-Block-Glitching")) {
             $player = $event->getPlayer();
 			$block = $event->getBlock();
-            if ($player->getGamemode() !== 0) return;
-			$event->setCancelled();
+			if ($player->isCreative() or $player->isSpectator()) return;
             if ($event->isCancelled()) {
-				$player->teleport($player, $player->getYaw(), 1);
-                if ($this->config->get("CancelBlockPlace-Message")) {
-                    $player->sendMessage($this->config->get("CancelBlockPlace-Message"));
-                }
+				$playerX = $player->getX();
+				$playerZ = $player->getZ();
+				if($playerX < 0) $playerX = $playerX - 1;
+				if($playerZ < 0) $playerZ = $playerZ - 1;
+				if (($block->getX() == (int)$playerX) AND ($block->getZ() == (int)$playerZ) AND ($player->getY() > $block->getY())) { #If block is under the player
+					$player->teleport(new Vector3($player->getX(), $player->getY() - 0.3, $player->getZ()));
+					if ($this->config->get("CancelBlockPlace-Message")) $player->sendMessage($this->config->get("CancelBlockPlace-Message"));
+				}
             }
         }
     }
 
 	public function onCommandPre(PlayerCommandPreprocessEvent $event){
-        if ($this->config->get("CommandGlitching")) {
+        if ($this->config->get("Prevent-Command-Glitching")) {
             if((substr($event->getMessage(), 0, 2) == "/ ") || (substr($event->getMessage(), 0, 2) == "/\\") || (substr($event->getMessage(), 0, 2) == "/\"") || (substr($event->getMessage(), -1, 1) === "\\")){
                 $event->setCancelled();
                 if ($this->config->get("CancelCommand-Message")) {

@@ -1,11 +1,15 @@
+---
 # Enable or disable glitching prevention for the following glitches: (true/false)
-PearlGlitching: true 
-PlaceBlockGlitching: true
-BreakBlockGlitching: true
-CommandGlitching: true
+Prevent-Pearling-In-Small-Areas: false
+Prevent-Place-Block-Glitching: true
+Prevent-Break-Block-Glitching: true
+Prevent-Open-Door-Glitching: true
+Prevent-Command-Glitching: true
 
 # The message that will be sent to the place who attempts the glitch: (false/"<message>")
-CancelPearl-Message: "§7[§bAntiGlitch§7] §cPearl Cancelled due to suffocation!"
+CancelPearl-Message: §7[§bAntiGlitch§7] §cPearl Cancelled due to suffocation!
 CancelBlockPlace-Message: false
 CancelBlockBreak-Message: false
-CancelCommand-Message: "§7[§bAntiGlitch§7] §cCommand Cancelled due to glitch detected!"
+CancelOpenDoor-Message: false
+CancelCommand-Message: §7[§bAntiGlitch§7] §cCommand Cancelled due to glitch detected!
+...
