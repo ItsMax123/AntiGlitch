@@ -35,11 +35,13 @@ class Main extends PluginBase implements Listener {
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
 		$this->DefaultConfig = array(
 			"Prevent-Pearling-In-Small-Areas" => false,
+			"Prevent-Pearling-While-Suffocating" => true,
 			"Prevent-Place-Block-Glitching" => true,
 			"Prevent-Break-Block-Glitching" => true,
             "Prevent-Open-Door-Glitching" => true,
 			"Prevent-Command-Glitching" => true,
-			"CancelPearl-Message" => false,
+			"CancelPearl-In-Small-Area-Message" => false,
+			"CancelPearl-While-Suffocating-Message" => false,
 			"CancelBlockPlace-Message" => false,
 			"CancelBlockBreak-Message" => false,
             "CancelOpenDoor-Message" => false,
@@ -59,7 +61,7 @@ class Main extends PluginBase implements Listener {
     }
 
 
-        public function onPearlLandBlock(ProjectileHitEvent $event) {
+    public function onPearlLandBlock(ProjectileHitEvent $event) {
         $player = $event->getEntity()->getOwningEntity();
         if ($player instanceof Player && $event->getEntity() instanceof EnderPearl) $this->pearlland[$player->getName()] = time();
     }
@@ -82,10 +84,21 @@ class Main extends PluginBase implements Listener {
         //If pearl is in a block as soon as it lands (which could only mean it was shot into a block over a fence), put it back down in the fence. TODO Find a less hacky way of doing this?
         if($this->isInHitbox($level, $x, $y, $z)) $y = $y - 0.5;
 
+        if ($this->isInHitbox($level, $entity->getX(), $entity->getY() + 1.5, $entity->getZ())) {
+			if ($this->config->get("Prevent-Pearling-While-Suffocating")) {
+				if ($this->config->get("CancelPearl-While-Suffocating-Message")) {
+					$entity->sendMessage($this->config->get("CancelPearl-While-Suffocating-Message"));
+				}
+				$event->setCancelled();
+				return;
+			}
+		}
+
         //Try to find a good place to teleport.
+		$ys = $y;
         foreach (range(0, 1.9, 0.05) as $n) {
 			$xb = $x;
-			$yb = ($y - $n);
+			$yb = ($ys - $n);
 			$zb = $z;
 
 			if ($this->isInHitbox($level, ($x + 0.05), $yb, $z)) $xb = $xb - 0.3;
@@ -122,12 +135,12 @@ class Main extends PluginBase implements Listener {
 
 				//Prevent pearling into areas too small (configurable in config)
 				if ($this->config->get("Prevent-Pearling-In-Small-Areas")) {
-					if ($this->config->get("CancelPearl-Message")) {
-						$entity->sendMessage($this->config->get("CancelPearl-Message"));
+					if ($this->config->get("CancelPearl-In-Small-Area-Message")) {
+						$entity->sendMessage($this->config->get("CancelPearl-In-Small-Area-Message"));
 					}
 					$event->setCancelled();
+					return;
 				}
-
 				break;
 			}
 		}
