@@ -169,8 +169,7 @@ class Main extends PluginBase implements Listener {
 	 * @ignoreCancelled False
 	 */
 
-	public function onInteract(PlayerInteractEvent $event)
-	{
+	public function onInteract(PlayerInteractEvent $event) {
 		if ($event->getAction() !== PlayerInteractEvent::RIGHT_CLICK_BLOCK) return;
 		$player = $event->getPlayer();
 		if ($player->isCreative() or $player->isSpectator()) return;
@@ -178,11 +177,9 @@ class Main extends PluginBase implements Listener {
 		if ($event->isCancelled()) {
 			if ($block instanceof Door or $block instanceof FenceGate or $block instanceof Trapdoor) {
 				if ($this->config->get("Prevent-Open-Door-Glitching")) {
-					$dir = $player->getDirection();
 					$x = $player->getX();
 					$y = $player->getY();
 					$z = $player->getZ();
-					$pitch = 85;
 					$playerX = $player->getX();
 					$playerZ = $player->getZ();
 					if ($playerX < 0) $playerX = $playerX - 1;
@@ -190,31 +187,23 @@ class Main extends PluginBase implements Listener {
 					if (($block->getX() == (int)$playerX) and ($block->getZ() == (int)$playerZ) and ($player->getY() > $block->getY())) { #If block is under the player
 						foreach ($block->getCollisionBoxes() as $blockHitBox) {
 							$y = max([$y, $blockHitBox->maxY + 0.01]);
-							$pitch = 35;
 						}
+						$player->teleport(new Vector3($x, $y, $z), $player->getYaw(), 35);
 					} else { #If block is on the side of the player
-						if ($dir == 0) {
-							foreach ($block->getCollisionBoxes() as $blockHitBox) {
-								$x = min([$x, $blockHitBox->minX - 0.31]);
+						foreach ($block->getCollisionBoxes() as $blockHitBox) {
+							if (abs($x - ($blockHitBox->minX + $blockHitBox->maxX) / 2) > abs($z - ($blockHitBox->minZ + $blockHitBox->maxZ) / 2)) {
+								$xb = (5 / ($x - ($blockHitBox->minX + $blockHitBox->maxX) / 2)) / 24;
+								$zb = 0;
+							} else {
+								$xb = 0;
+								$zb = (5 / ($z - ($blockHitBox->minZ + $blockHitBox->maxZ) / 2)) / 24;
 							}
-						} elseif ($dir == 1) {
-							foreach ($block->getCollisionBoxes() as $blockHitBox) {
-								$z = min([$z, $blockHitBox->minZ - 0.31]);
-							}
-						} elseif ($dir == 2) {
-							foreach ($block->getCollisionBoxes() as $blockHitBox) {
-								$x = max([$x, $blockHitBox->maxX + 0.31]);
-							}
-						} elseif ($dir == 3) {
-							foreach ($block->getCollisionBoxes() as $blockHitBox) {
-								$z = max([$z, $blockHitBox->maxZ + 0.31]);
-							}
+							$player->teleport($player, $player->getYaw(), 85);
+							$player->setMotion(new Vector3($xb, 0, $zb));
 						}
 					}
 
 					if ($this->config->get("CancelOpenDoor-Message")) $player->sendMessage($this->config->get("CancelOpenDoor-Message"));
-
-					$player->teleport(new Vector3($x, $y, $z), $player->getYaw(), $pitch);
 				}
 			} else {
 				if ($this->config->get("Prevent-Place-Block-Glitching")) {
@@ -244,7 +233,6 @@ class Main extends PluginBase implements Listener {
             $block = $event->getBlock();
 			if ($player->isCreative() or $player->isSpectator()) return;
             if ($event->isCancelled()) {
-				$dir = $player->getDirection();
 				$x = $player->getX();
 				$y = $player->getY();
 				$z = $player->getZ();
@@ -256,29 +244,20 @@ class Main extends PluginBase implements Listener {
 					foreach ($block->getCollisionBoxes() as $blockHitBox) {
 						$y = max([$y, $blockHitBox->maxY]);
 					}
+					$player->teleport(new Vector3($x, $y, $z));
 				} else { #If block is on the side of the player
-					if ($dir == 0) {
-						foreach ($block->getCollisionBoxes() as $blockHitBox) {
-							$x = min([$x, $blockHitBox->minX - 0.31]);
-						}
-					} elseif ($dir == 1) {
-						foreach ($block->getCollisionBoxes() as $blockHitBox) {
-							$z = min([$z, $blockHitBox->minZ - 0.31]);
-						}
-					} elseif ($dir == 2) {
-						foreach ($block->getCollisionBoxes() as $blockHitBox) {
-							$x = max([$x, $blockHitBox->maxX + 0.31]);
-						}
-					} elseif ($dir == 3) {
-						foreach ($block->getCollisionBoxes() as $blockHitBox) {
-							$z = max([$z, $blockHitBox->maxZ + 0.31]);
+					$xb = 0;
+					$zb = 0;
+					foreach ($block->getCollisionBoxes() as $blockHitBox) {
+						if (abs($x - ($blockHitBox->minX + $blockHitBox->maxX) / 2) > abs($z - ($blockHitBox->minZ + $blockHitBox->maxZ) / 2)) {
+							$xb = (5 / ($x - ($blockHitBox->minX + $blockHitBox->maxX) / 2)) / 24;
+						} else {
+							$zb = (5 / ($z - ($blockHitBox->minZ + $blockHitBox->maxZ) / 2)) / 24;
 						}
 					}
+					$player->setMotion(new Vector3($xb, 0, $zb));
 				}
-				$player->teleport(new Vector3($x, $y, $z));
-				if ($this->config->get("CancelBlockBreak-Message")) {
-					$player->sendMessage($this->config->get("CancelBlockBreak-Message"));
-				}
+				if ($this->config->get("CancelBlockBreak-Message")) $player->sendMessage($this->config->get("CancelBlockBreak-Message"));
             }
         }
     }
