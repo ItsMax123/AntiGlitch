@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Max\AntiGlitch;
 
+use Max\StaffMode\ui\TeleportForm;
 use pocketmine\block\Block;
 use pocketmine\block\Door;
 use pocketmine\block\FenceGate;
 use pocketmine\block\IronDoor;
 use pocketmine\block\IronTrapdoor;
 use pocketmine\block\Trapdoor;
+use pocketmine\entity\Entity;
 use pocketmine\item\ItemBlock;
 use pocketmine\math\Vector3;
 use pocketmine\plugin\PluginBase;
@@ -63,7 +65,7 @@ class Main extends PluginBase implements Listener {
 
     public function onPearlLandBlock(ProjectileHitEvent $event) {
         $player = $event->getEntity()->getOwningEntity();
-        if ($player instanceof Player && $event->getEntity() instanceof EnderPearl) $this->pearlland[$player->getName()] = time();
+        if ($player instanceof Player && $event->getEntity() instanceof EnderPearl) $this->pearlland[$player->getName()] = $this->getServer()->getTick();
     }
 
     public function onTP(EntityTeleportEvent $event) {
@@ -72,7 +74,7 @@ class Main extends PluginBase implements Listener {
         $level = $entity->getLevel();
         $to = $event->getTo();
         if (!isset($this->pearlland[$entity->getName()])) return;
-        if (time() != $this->pearlland[$entity->getName()]) return; //Check if teleportation was caused by enderpearl (by checking is a projectile landed at the same time as teleportation) TODO Find a less hacky way of doing this?
+        if ($this->getServer()->getTick() != $this->pearlland[$entity->getName()]) return; //Check if teleportation was caused by enderpearl (by checking is a projectile landed at the same time as teleportation) TODO Find a less hacky way of doing this?
 
         //Get coords and adjust for negative quadrants.
         $x = $to->getX();
@@ -140,6 +142,10 @@ class Main extends PluginBase implements Listener {
 					}
 					$event->setCancelled();
 					return;
+				} else {
+					if($x < 0) $x = $x + 1;
+					if($z < 0) $z = $z + 1;
+					$this->getScheduler()->scheduleDelayedTask(new TeleportTask($entity, new Location($x, $y, $z, $entity->getYaw(), $entity->getPitch(), $entity->getLevel())), 3);
 				}
 				break;
 			}
@@ -186,17 +192,17 @@ class Main extends PluginBase implements Listener {
 					if ($playerZ < 0) $playerZ = $playerZ - 1;
 					if (($block->getX() == (int)$playerX) and ($block->getZ() == (int)$playerZ) and ($player->getY() > $block->getY())) { #If block is under the player
 						foreach ($block->getCollisionBoxes() as $blockHitBox) {
-							$y = max([$y, $blockHitBox->maxY + 0.01]);
+							$y = max([$y, $blockHitBox->maxY + 0.05]);
 						}
 						$player->teleport(new Vector3($x, $y, $z), $player->getYaw(), 35);
 					} else { #If block is on the side of the player
 						foreach ($block->getCollisionBoxes() as $blockHitBox) {
 							if (abs($x - ($blockHitBox->minX + $blockHitBox->maxX) / 2) > abs($z - ($blockHitBox->minZ + $blockHitBox->maxZ) / 2)) {
-								$xb = (5 / ($x - ($blockHitBox->minX + $blockHitBox->maxX) / 2)) / 24;
+								$xb = (3 / ($x - ($blockHitBox->minX + $blockHitBox->maxX) / 2)) / 25;
 								$zb = 0;
 							} else {
 								$xb = 0;
-								$zb = (5 / ($z - ($blockHitBox->minZ + $blockHitBox->maxZ) / 2)) / 24;
+								$zb = (3 / ($z - ($blockHitBox->minZ + $blockHitBox->maxZ) / 2)) / 25;
 							}
 							$player->teleport($player, $player->getYaw(), 85);
 							$player->setMotion(new Vector3($xb, 0, $zb));
@@ -204,19 +210,6 @@ class Main extends PluginBase implements Listener {
 					}
 
 					if ($this->config->get("CancelOpenDoor-Message")) $player->sendMessage($this->config->get("CancelOpenDoor-Message"));
-				}
-			} else {
-				if ($this->config->get("Prevent-Place-Block-Glitching")) {
-					if ($player->getInventory()->getItemInHand() instanceof ItemBlock and $player->getInventory()->getItemInHand()->getId() !== 0) {
-						$playerX = $player->getX();
-						$playerZ = $player->getZ();
-						if ($playerX < 0) $playerX = $playerX - 1;
-						if ($playerZ < 0) $playerZ = $playerZ - 1;
-						if (($block->getX() == (int)$playerX) and ($block->getZ() == (int)$playerZ) and ($player->getY() > $block->getY())) { #If block is under the player
-							$player->teleport(new Vector3($player->getX(), $player->getY() - 0.3, $player->getZ()));
-							if ($this->config->get("CancelBlockPlace-Message")) $player->sendMessage($this->config->get("CancelBlockPlace-Message"));
-						}
-					}
 				}
 			}
 		}
@@ -278,7 +271,8 @@ class Main extends PluginBase implements Listener {
 				if($playerX < 0) $playerX = $playerX - 1;
 				if($playerZ < 0) $playerZ = $playerZ - 1;
 				if (($block->getX() == (int)$playerX) AND ($block->getZ() == (int)$playerZ) AND ($player->getY() > $block->getY())) { #If block is under the player
-					$player->teleport(new Vector3($player->getX(), $player->getY() - 0.3, $player->getZ()));
+					$playerMotion = $player->getMotion();
+					$this->getScheduler()->scheduleDelayedTask(new MotionTask($player, new Vector3($playerMotion->getX(), -0.1, $playerMotion->getZ())), 2);
 					if ($this->config->get("CancelBlockPlace-Message")) $player->sendMessage($this->config->get("CancelBlockPlace-Message"));
 				}
             }
@@ -295,4 +289,28 @@ class Main extends PluginBase implements Listener {
             }
         }
     }
+}
+
+class TeleportTask extends Task {
+
+	public function __construct(Entity $entity, Location $location) {
+		$this->entity = $entity;
+		$this->location = $location;
+	}
+
+	public function onRun(int $currentTick) {
+		$this->entity->teleport($this->location);
+	}
+}
+
+class MotionTask extends Task {
+
+	public function __construct(Entity $entity, Vector3 $vector3) {
+		$this->entity = $entity;
+		$this->vector3 = $vector3;
+	}
+
+	public function onRun(int $currentTick) {
+		$this->entity->setMotion($this->vector3);
+	}
 }
