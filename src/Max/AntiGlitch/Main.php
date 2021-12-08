@@ -145,7 +145,7 @@ class Main extends PluginBase implements Listener {
 				} else {
 					if($x < 0) $x = $x + 1;
 					if($z < 0) $z = $z + 1;
-					$this->getScheduler()->scheduleDelayedTask(new TeleportTask($entity, new Location($x, $y, $z, $entity->getYaw(), $entity->getPitch(), $entity->getLevel())), 3);
+					$this->getScheduler()->scheduleDelayedTask(new TeleportTask($entity, new Location($x, $y, $z, $entity->getYaw(), $entity->getPitch(), $entity->getLevel())), 5);
 				}
 				break;
 			}
