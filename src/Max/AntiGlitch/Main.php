@@ -123,18 +123,19 @@ class Main extends PluginBase implements Listener {
 			if($this->isInHitbox($level, $x, ($y + $n), $z)) {
 
 				//Teleport the player into the middle of the block so they can't phase into an adjacent block.
-				$blockHitBox = $level->getBlockAt((int)$xb, (int)$yb, (int)$zb)->getCollisionBoxes()[0];
-				if($x < 0) {
-					$x = (($blockHitBox->minX + $blockHitBox->maxX) / 2) - 1;
-				} else {
-					$x = ($blockHitBox->minX + $blockHitBox->maxX) / 2;
+				if(isset($level->getBlockAt((int)$xb, (int)$yb, (int)$zb)->getCollisionBoxes()[0])) {
+					$blockHitBox = $level->getBlockAt((int)$xb, (int)$yb, (int)$zb)->getCollisionBoxes()[0];
+					if($x < 0) {
+						$x = (($blockHitBox->minX + $blockHitBox->maxX) / 2) - 1;
+					} else {
+						$x = ($blockHitBox->minX + $blockHitBox->maxX) / 2;
+					}
+					if($z < 0) {
+						$z = (($blockHitBox->minZ + $blockHitBox->maxZ) / 2) - 1;
+					} else {
+						$z = ($blockHitBox->minZ + $blockHitBox->maxZ) / 2;
+					}
 				}
-				if($z < 0) {
-					$z = (($blockHitBox->minZ + $blockHitBox->maxZ) / 2) - 1;
-				} else {
-					$z = ($blockHitBox->minZ + $blockHitBox->maxZ) / 2;
-				}
-
 				//Prevent pearling into areas too small (configurable in config)
 				if ($this->config->get("Prevent-Pearling-In-Small-Areas")) {
 					if ($this->config->get("CancelPearl-In-Small-Area-Message")) {
