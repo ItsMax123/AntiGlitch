@@ -36,18 +36,18 @@ class Main extends PluginBase implements Listener {
         $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML);
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
 		$this->DefaultConfig = array(
-			"Prevent-Pearling-In-Small-Areas" => false,
-			"Prevent-Pearling-While-Suffocating" => true,
-			"Prevent-Place-Block-Glitching" => true,
-			"Prevent-Break-Block-Glitching" => true,
-            "Prevent-Open-Door-Glitching" => true,
-			"Prevent-Command-Glitching" => true,
+			"Prevent-Pearling-In-Small-Areas" => true,
+			"Prevent-Pearling-While-Suffocating" => false,
+			"Prevent-Place-Block-Glitching" => false,
+			"Prevent-Break-Block-Glitching" => false,
+                        "Prevent-Open-Door-Glitching" => false,
+			"Prevent-Command-Glitching" => false,
 			"CancelPearl-In-Small-Area-Message" => false,
 			"CancelPearl-While-Suffocating-Message" => false,
 			"CancelBlockPlace-Message" => false,
 			"CancelBlockBreak-Message" => false,
-            "CancelOpenDoor-Message" => false,
-			"CancelCommand-Message" => "§7[§bAntiGlitch§7] §cCommand Cancelled due to invalid format!"
+                        "CancelOpenDoor-Message" => false,
+			"CancelCommand-Message" => "§7[§cGuardian§7] §cCommand Cancelled due to invalid format!"
 		);
 
 		//Automatically update config file if plugin gets updated
