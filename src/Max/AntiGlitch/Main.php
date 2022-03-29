@@ -31,7 +31,8 @@ class Main extends PluginBase implements Listener {
 
     private $pearlland;
 
-    public function onEnable() {
+    public function onEnable(): void
+          {
         $this->saveResource("config.yml");
         $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML);
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
@@ -299,7 +300,7 @@ class TeleportTask extends Task {
 		$this->location = $location;
 	}
 
-	public function onRun(int $currentTick) {
+	public function onRun(): void {
 		$this->entity->teleport($this->location);
 	}
 }
@@ -311,7 +312,7 @@ class MotionTask extends Task {
 		$this->vector3 = $vector3;
 	}
 
-	public function onRun(int $currentTick) {
+	public function onRun(): void {
 		$this->entity->setMotion($this->vector3);
 	}
-}
+} 
