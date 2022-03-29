@@ -21,7 +21,7 @@ use pocketmine\player\Player;
 use pocketmine\scheduler\Task;
 use pocketmine\utils\Config;
 use pocketmine\entity\projectile\EnderPearl;
-use pocketmine\level\{Position, Location};
+use pocketmine\world\{Position, Location};
 
 use pocketmine\event\player\{PlayerCommandPreprocessEvent, PlayerInteractEvent};
 use pocketmine\event\entity\{ProjectileHitEvent, EntityTeleportEvent};
@@ -72,7 +72,7 @@ class Main extends PluginBase implements Listener {
     public function onTP(EntityTeleportEvent $event) {
         $entity = $event->getEntity();
         if (!$entity instanceof Player) return;
-        $level = $entity->getLevel();
+        $level = $entity->getWorld();
         $to = $event->getTo();
         if (!isset($this->pearlland[$entity->getName()])) return;
         if ($this->getServer()->getTick() != $this->pearlland[$entity->getName()]) return; //Check if teleportation was caused by enderpearl (by checking is a projectile landed at the same time as teleportation) TODO Find a less hacky way of doing this?
