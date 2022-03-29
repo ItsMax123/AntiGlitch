@@ -92,7 +92,7 @@ class Main extends PluginBase implements Listener {
 				if ($this->config->get("CancelPearl-While-Suffocating-Message")) {
 					$entity->sendMessage($this->config->get("CancelPearl-While-Suffocating-Message"));
 				}
-				$event->setCancelled();
+				$event->cancel();
 				return;
 			}
 		}
@@ -142,7 +142,7 @@ class Main extends PluginBase implements Listener {
 					if ($this->config->get("CancelPearl-In-Small-Area-Message")) {
 						$entity->sendMessage($this->config->get("CancelPearl-In-Small-Area-Message"));
 					}
-					$event->setCancelled();
+					$event->cancel();
 					return;
 				} else {
 					if($x < 0) $x = $x + 1;
@@ -185,18 +185,18 @@ class Main extends PluginBase implements Listener {
 		if ($event->isCancelled()) {
 			if ($block instanceof Door or $block instanceof FenceGate or $block instanceof Trapdoor) {
 				if ($this->config->get("Prevent-Open-Door-Glitching")) {
-					$x = $player->getX();
-					$y = $player->getY();
-					$z = $player->getZ();
-					$playerX = $player->getX();
-					$playerZ = $player->getZ();
+					$x = $player->getPosition()->getX();
+					$y = $player->getPosition()->getY();
+					$z = $player->getPosition()->getZ();
+					$playerX = $player->getPosition()->getX();
+					$playerZ = $player->getPosition()->getZ();
 					if ($playerX < 0) $playerX = $playerX - 1;
 					if ($playerZ < 0) $playerZ = $playerZ - 1;
-					if (($block->getX() == (int)$playerX) and ($block->getZ() == (int)$playerZ) and ($player->getY() > $block->getY())) { #If block is under the player
+					if (($block->getX() == (int)$playerX) and ($block->getPosition()->getZ() == (int)$playerZ) and ($player->getPosition()->getY() > $block->getPosition()->getY())) { #If block is under the player
 						foreach ($block->getCollisionBoxes() as $blockHitBox) {
 							$y = max([$y, $blockHitBox->maxY + 0.05]);
 						}
-						$player->teleport(new Vector3($x, $y, $z), $player->getYaw(), 35);
+						$player->teleport(new Vector3($x, $y, $z), $player->getPosition()->getYaw(), 35);
 					} else { #If block is on the side of the player
 						foreach ($block->getCollisionBoxes() as $blockHitBox) {
 							if (abs($x - ($blockHitBox->minX + $blockHitBox->maxX) / 2) > abs($z - ($blockHitBox->minZ + $blockHitBox->maxZ) / 2)) {
@@ -206,7 +206,7 @@ class Main extends PluginBase implements Listener {
 								$xb = 0;
 								$zb = (3 / ($z - ($blockHitBox->minZ + $blockHitBox->maxZ) / 2)) / 25;
 							}
-							$player->teleport($player, $player->getYaw(), 85);
+							$player->teleport($player, $player->getLocation()->getYaw(), 85);
 							$player->setMotion(new Vector3($xb, 0, $zb));
 						}
 					}
@@ -228,14 +228,14 @@ class Main extends PluginBase implements Listener {
             $block = $event->getBlock();
 			if ($player->isCreative() or $player->isSpectator()) return;
             if ($event->isCancelled()) {
-				$x = $player->getX();
-				$y = $player->getY();
-				$z = $player->getZ();
-				$playerX = $player->getX();
-				$playerZ = $player->getZ();
+				$x = $player->getPosition()->getX();
+				$y = $player->getPosition()->getY();
+				$z = $player->getPosition()->getZ();
+				$playerX = $player->getPosition()->getX();
+				$playerZ = $player->getPosition()->getZ();
 				if($playerX < 0) $playerX = $playerX - 1;
 				if($playerZ < 0) $playerZ = $playerZ - 1;
-				if (($block->getX() == (int)$playerX) AND ($block->getZ() == (int)$playerZ) AND ($player->getY() > $block->getY())) { #If block is under the player
+				if (($block->getPosition()->getX() == (int)$playerX) AND ($block->getPosition()->getZ() == (int)$playerZ) AND ($player->getPosition()->getY() > $block->getPosition()->getY())) { #If block is under the player
 					foreach ($block->getCollisionBoxes() as $blockHitBox) {
 						$y = max([$y, $blockHitBox->maxY]);
 					}
@@ -268,13 +268,13 @@ class Main extends PluginBase implements Listener {
 			$block = $event->getBlock();
 			if ($player->isCreative() or $player->isSpectator()) return;
             if ($event->isCancelled()) {
-				$playerX = $player->getX();
-				$playerZ = $player->getZ();
+				$playerX = $player->getPosition()->getX();
+				$playerZ = $player->getPosition()->getZ();
 				if($playerX < 0) $playerX = $playerX - 1;
 				if($playerZ < 0) $playerZ = $playerZ - 1;
-				if (($block->getX() == (int)$playerX) AND ($block->getZ() == (int)$playerZ) AND ($player->getY() > $block->getY())) { #If block is under the player
+				if (($block->getPosition()->getX() == (int)$playerX) AND ($block->getPosition()->getZ() == (int)$playerZ) AND ($player->getPosition()->getY() > $block->getPosition()->getY())) { #If block is under the player
 					$playerMotion = $player->getMotion();
-					$this->getScheduler()->scheduleDelayedTask(new MotionTask($player, new Vector3($playerMotion->getX(), -0.1, $playerMotion->getZ())), 2);
+					$this->getScheduler()->scheduleDelayedTask(new MotionTask($player, new Vector3($playerMotion->getPosition()->getX(), -0.1, $playerMotion->getPosition()->getZ())), 2);
 					if ($this->config->get("CancelBlockPlace-Message")) $player->sendMessage($this->config->get("CancelBlockPlace-Message"));
 				}
             }
@@ -284,7 +284,7 @@ class Main extends PluginBase implements Listener {
 	public function onCommandPre(PlayerCommandPreprocessEvent $event){
         if ($this->config->get("Prevent-Command-Glitching")) {
             if((substr($event->getMessage(), 0, 2) == "/ ") || (substr($event->getMessage(), 0, 2) == "/\\") || (substr($event->getMessage(), 0, 2) == "/\"") || (substr($event->getMessage(), -1, 1) === "\\")){
-                $event->setCancelled();
+                $event->cancel();
                 if ($this->config->get("CancelCommand-Message")) {
                     $event->getPlayer()->sendMessage($this->config->get("CancelCommand-Message"));
                 }
