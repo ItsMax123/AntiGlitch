@@ -87,7 +87,7 @@ class Main extends PluginBase implements Listener {
         //If pearl is in a block as soon as it lands (which could only mean it was shot into a block over a fence), put it back down in the fence. TODO Find a less hacky way of doing this?
         if($this->isInHitbox($level, $x, $y, $z)) $y = $y - 0.5;
 
-        if ($this->isInHitbox($level, $entity->getX(), $entity->getY() + 1.5, $entity->getZ())) {
+        if ($this->isInHitbox($level, $entity->getPosition()->getX(), $entity->getPosition()->getY() + 1.5, $entity->getPosition()->getZ())) {
 			if ($this->config->get("Prevent-Pearling-While-Suffocating")) {
 				if ($this->config->get("CancelPearl-While-Suffocating-Message")) {
 					$entity->sendMessage($this->config->get("CancelPearl-While-Suffocating-Message"));
