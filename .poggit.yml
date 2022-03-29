@@ -1,8 +1,0 @@
---- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/ProtectorYT364/AntiGlitch
-build-by-default: true
-branches:
-- master
-projects:
-  AntiGlitch:
-    path: ""
-...
