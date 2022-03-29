@@ -1,7 +1,3 @@
-[![](https://poggit.pmmp.io/shield.state/AntiGlitch)](https://poggit.pmmp.io/p/AntiGlitch)
-[![](https://poggit.pmmp.io/shield.api/AntiGlitch)](https://poggit.pmmp.io/p/AntiGlitch)
-[![](https://poggit.pmmp.io/shield.dl.total/AntiGlitch)](https://poggit.pmmp.io/p/AntiGlitch)
-
 <img src="https://i.ibb.co/gdynDyp/Anti-Glitch-2.png" width="120" height="120" align="left"></img>
 
 # AntiGlitch
