@@ -1,3 +1,6 @@
+## AntiGlitch is Archived and will no longer be updated!
+### If you need a plugin that prevents pearl glitching, consider using [BetterPearls](https://github.com/ItsMax123/BetterPearls).
+
 [![](https://poggit.pmmp.io/shield.state/AntiGlitch)](https://poggit.pmmp.io/p/AntiGlitch)
 [![](https://poggit.pmmp.io/shield.api/AntiGlitch)](https://poggit.pmmp.io/p/AntiGlitch)
 [![](https://poggit.pmmp.io/shield.dl.total/AntiGlitch)](https://poggit.pmmp.io/p/AntiGlitch)
